@@ -9,13 +9,17 @@ export function CodeExamplesSection() {
   const examples = {
     scrape: `# Scrape all properties
 $ aptscout scrape
-→ Scraping Desert Club Apartments...
-→ Desert Club Apartments: 14 plans, 24 units
-→ Scraping Hideaway North Scottsdale...
-→ Hideaway North Scottsdale: 18 plans, 11 units
+
+[1/2] Desert Club Apartments
+  ⠋ Fetching floor plans and units...
+  ✓ 14 plans, 24 units (24 new)
+
+[2/2] Hideaway North Scottsdale
+  ⠋ Fetching floor plans and units...
+  ✓ 17 plans, 10 units (10 new)
 
 ✓ Scrape complete.
-→ 35 units available (35 new)
+→ 34 units available (34 new)
 → Database: ~/.local/share/aptscout/aptscout.db
 
 # Or scrape a single property

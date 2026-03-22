@@ -27,7 +27,7 @@ export function FeaturesSection() {
     {
       icon: <Filter className="w-6 h-6" />,
       title: 'Powerful Filtering',
-      description: 'Filter by beds, baths, max price, floor plan, renovated/premium, and availability date. Sort by price, sqft, date, or unit number.',
+      description: 'Filter by beds, baths, price range, date range, floor plan, and renovated/premium. Sort by price, sqft, date (Available Now first), or unit number.',
     },
     {
       icon: <Clock className="w-6 h-6" />,
@@ -58,6 +58,11 @@ export function FeaturesSection() {
       icon: <Terminal className="w-6 h-6" />,
       title: 'JSON Output',
       description: 'All list commands support --json for structured output. Pipe to jq, feed into scripts, or integrate with other tools.',
+    },
+    {
+      icon: <Search className="w-6 h-6" />,
+      title: '⌘K Command Palette',
+      description: 'Quick-navigate the web UI with a command palette. Switch properties, trigger scrapes, clear filters — all from the keyboard.',
     },
   ];
 
