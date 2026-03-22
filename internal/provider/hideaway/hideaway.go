@@ -104,6 +104,7 @@ func parseFloorPlans(body string) ([]parsedPlan, error) {
 			text := strings.TrimSpace(extractText(n))
 			// Skip non-plan headings.
 			if text != "" && text != "Filters" && text != "No matches" &&
+				text != "More Filters" && !strings.Contains(text, "More Filters") &&
 				!strings.Contains(text, "Apartment") && len(text) > 3 {
 				if current != nil {
 					plans = append(plans, *current)

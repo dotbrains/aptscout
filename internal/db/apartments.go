@@ -120,7 +120,7 @@ func (db *DB) ListApartments(f models.ApartmentFilter) ([]models.Apartment, erro
 	sortCol := "a.price"
 	switch f.Sort {
 	case "date":
-		sortCol = "COALESCE(a.available_date, '0000-00-00')"
+		sortCol = "CASE WHEN a.available_now = 1 THEN '0000-00-00' WHEN a.available_date IS NULL THEN '9999-99-99' ELSE a.available_date END"
 	case "sqft":
 		sortCol = "fp.sqft"
 	case "unit":

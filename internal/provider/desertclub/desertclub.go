@@ -251,6 +251,16 @@ func parseFloorPlanDetail(body string) ([]parsedApartment, error) {
 				current = &parsedApartment{UnitNumber: m[1]}
 			}
 		}
+		// Check element nodes for availability (text may be in nested spans/divs)
+		if current != nil && n.Type == html.ElementNode && n.Data != "h3" {
+			fullText := extractText(n)
+			if strings.Contains(fullText, "Available Now") {
+				current.AvailableNow = true
+			}
+			if m := dateAvailRe.FindStringSubmatch(fullText); m != nil && current.AvailableDate == "" {
+				current.AvailableDate = m[1]
+			}
+		}
 		if current != nil && n.Type == html.TextNode {
 			text := strings.TrimSpace(n.Data)
 			if strings.Contains(text, "Available Now") {
@@ -296,6 +306,15 @@ func parseFloorPlanDetail(body string) ([]parsedApartment, error) {
 	if current != nil {
 		apartments = append(apartments, *current)
 	}
+
+	// If a unit has no date and isn't marked available_now, default to available_now.
+	// This handles cases where the site doesn't explicitly say "Available Now" but the unit is listed.
+	for i := range apartments {
+		if !apartments[i].AvailableNow && apartments[i].AvailableDate == "" {
+			apartments[i].AvailableNow = true
+		}
+	}
+
 	return apartments, nil
 }
 
