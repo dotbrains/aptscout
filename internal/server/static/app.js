@@ -287,7 +287,7 @@
       renderDashboard();
     };
 
-    document.querySelectorAll('.card').forEach
+    document.querySelectorAll('.card').forEach(c => c.onclick = () => {
       location.hash = '#/unit/' + c.dataset.property + '/' + c.dataset.unit;
     });
 
