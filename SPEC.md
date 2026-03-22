@@ -91,14 +91,21 @@ Scrape all floor plans and update the database.
 
 ```
 $ aptscout scrape
-→ Fetching floor plans index...
-→ Found 14 floor plans
-→ Scraping A1R, A1P, A2R, A2P, S1R, S1P, B1R, B1P, B2R, B2P, B3R, B3P, C1R, C1P...
+
+[1/2] Desert Club Apartments
+  ⠋ Fetching floor plans and units...
+  ✓ 14 plans, 24 units (24 new)
+
+[2/2] Hideaway North Scottsdale
+  ⠋ Fetching floor plans and units...
+  ✓ 17 plans, 10 units (10 new)
 
 ✓ Scrape complete.
-→ 12 units available (3 new, 1 price changed, 2 no longer available)
+→ 34 units available (34 new)
 → Database: ~/.local/share/aptscout/aptscout.db
 ```
+
+A braille-dot spinner animates while each provider is being scraped. Per-provider results show plan/unit counts inline.
 
 ### `aptscout list`
 
@@ -214,8 +221,8 @@ All HTML/CSS/JS is embedded in the Go binary via `//go:embed` — no external de
 - **Filter sidebar** — Persistent filter panel with: bedroom count (1/2/3 toggle buttons), bathroom count, price range inputs, date range picker (from/to), floor plan multi-select, renovated/premium toggle.
 - **Date range filter** — Two date inputs to find units available in a specific window. Units marked "Available Now" always show. Contextual empty state with `calendar-x` icon and helpful message when no units match.
 - **Apartment cards** — Each card shows: unit number, floor plan code, property badge, bed/bath, sqft, price, availability date, floor level, amenities. Lucide icons throughout.
-- **Sort controls** — Sort by price (low→high, high→low), availability date, sqft, unit number.
-- **Scrape button** — Trigger a re-scrape from the UI. Shows spinner, then refreshes with a toast.
+- **Sort controls** — Sort by price (low→high, high→low), availability date (Available Now first, then by date, TBD last), sqft, unit number.
+- **Scrape button** — Trigger a re-scrape from the UI. Shows a full-page loading overlay with spinner and status text, then refreshes with a toast.
 - **Last scraped** — Relative timestamp in the header.
 - **Back link** — "← All Properties" returns to the property picker.
 
