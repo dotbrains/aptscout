@@ -62,13 +62,17 @@ export default async function Image() {
 
         <div
           style={{
-            fontSize: 28,
-            color: '#8B7D6B',
+            display: 'flex',
+            flexDirection: 'column',
             marginBottom: 40,
-            lineHeight: 1.4,
           }}
         >
-          Apartment availability across multiple properties,{'\n'}one command.
+          <div style={{ fontSize: 28, color: '#8B7D6B' }}>
+            Apartment availability across multiple properties,
+          </div>
+          <div style={{ fontSize: 28, color: '#8B7D6B' }}>
+            one command.
+          </div>
         </div>
 
         {/* Badges */}
