@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -40,22 +41,57 @@ func runScrape(cmd *cobra.Command, version string) error {
 		return fmt.Errorf("unknown property: %s", flagProperty)
 	}
 
-	s := scraper.New(database, cmd.OutOrStdout())
+	w := cmd.OutOrStdout()
+	s := scraper.New(database, w)
 	var totalFound, totalNew, totalChanged, totalRemoved int
 
-	for _, prov := range providers {
+	for i, prov := range providers {
+		_, _ = fmt.Fprintf(w, "\n[%d/%d] %s\n", i+1, len(providers), prov.Name())
+
+		// Start spinner
+		ctx, cancel := context.WithCancel(context.Background())
+		done := make(chan struct{})
+		go func() {
+			frames := []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
+			i := 0
+			for {
+				select {
+				case <-ctx.Done():
+					close(done)
+					return
+				default:
+					_, _ = fmt.Fprintf(w, "\r  %s Fetching floor plans and units...", frames[i%len(frames)])
+					i++
+					time.Sleep(80 * time.Millisecond)
+				}
+			}
+		}()
+
 		result, err := s.RunProvider(context.Background(), prov)
+		cancel()
+		<-done
+		_, _ = fmt.Fprintf(w, "\r%s\r", "                                              ") // clear spinner line
+
 		if err != nil {
-			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "\u2717 %s: %v\n", prov.Name(), err)
+			_, _ = fmt.Fprintf(w, "  ✗ %s: %v\n", prov.Name(), err)
 			continue
 		}
+		_, _ = fmt.Fprintf(w, "  ✓ %d plans, %d units", result.FloorPlans, result.UnitsFound)
+		if result.UnitsNew > 0 {
+			_, _ = fmt.Fprintf(w, " (%d new)", result.UnitsNew)
+		}
+		if result.UnitsChanged > 0 {
+			_, _ = fmt.Fprintf(w, " (%d changed)", result.UnitsChanged)
+		}
+		_, _ = fmt.Fprintln(w)
+
 		totalFound += result.UnitsFound
 		totalNew += result.UnitsNew
 		totalChanged += result.UnitsChanged
 		totalRemoved += result.UnitsRemoved
 	}
 
-	_, _ = fmt.Fprintf(cmd.OutOrStdout(), "\n\u2713 Scrape complete.\n")
+	_, _ = fmt.Fprintf(w, "\n✓ Scrape complete.\n")
 	parts := []string{fmt.Sprintf("%d unit%s available", totalFound, plural(totalFound))}
 	if totalNew > 0 {
 		parts = append(parts, fmt.Sprintf("%d new", totalNew))
