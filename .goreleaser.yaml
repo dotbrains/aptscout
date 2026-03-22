@@ -1,0 +1,39 @@
+version: 2
+
+builds:
+  - binary: aptscout
+    goos: [darwin, linux]
+    goarch: [amd64, arm64]
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+
+homebrew_casks:
+  - repository:
+      owner: dotbrains
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    name: aptscout
+    homepage: https://github.com/dotbrains/aptscout
+    description: Apartment availability tracker CLI
+    license: "MIT"
+    binaries: [aptscout]
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/aptscout"]
+          end
+
+archives:
+  - formats: [tar.gz]
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^chore:"

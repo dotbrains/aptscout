@@ -1,0 +1,28 @@
+# Go
+aptscout
+coverage.out
+*.test
+
+# SQLite
+*.db
+*.db-shm
+*.db-wal
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Website (Next.js)
+website/node_modules/
+website/.next/
+website/out/
+
+# GoReleaser
+dist/

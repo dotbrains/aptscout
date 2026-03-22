@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  html,
+  body {
+    @apply bg-dark-mesa text-cream;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    @apply bg-arizona-red text-white;
+  }
+
+  ::-moz-selection {
+    @apply bg-arizona-red text-white;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-arizona-red via-arizona-copper to-arizona-gold;
+  }
+}
