@@ -182,9 +182,9 @@
             <div class="filter-group">
               <span class="filter-label"><i data-lucide="calendar-range" class="icon-sm"></i> Availability</span>
               <div class="filter-range">
-                <input type="date" class="filter-input" id="avail-from" value="${filters.available_from || ''}" placeholder="From">
-                <span style="color:var(--muted)">to</span>
-                <input type="date" class="filter-input" id="avail-to" value="${filters.available_to || ''}" placeholder="To">
+                <input type="date" class="filter-input" id="avail-from" value="${filters.available_from || ''}">
+                <span style="color:var(--muted);font-size:11px;flex-shrink:0">–</span>
+                <input type="date" class="filter-input" id="avail-to" value="${filters.available_to || ''}">
               </div>
               ${filters.available_from || filters.available_to ? '<div style="margin-top:4px;font-size:11px;color:var(--accent2)"><i data-lucide="info" class="icon-sm"></i> Showing units available in this date range</div>' : ''}
             </div>
