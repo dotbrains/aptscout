@@ -45,18 +45,42 @@
   }
 
   // Scrape button
+  function showLoading(text, sub) {
+    const overlay = document.createElement('div');
+    overlay.className = 'loading-overlay';
+    overlay.id = 'loading-overlay';
+    overlay.innerHTML = `
+      <div class="loading-spinner"></div>
+      <div class="loading-text">${text || 'Scraping...'}</div>
+      <div class="loading-sub" id="loading-sub">${sub || 'Fetching apartments from all properties'}</div>
+    `;
+    document.body.appendChild(overlay);
+  }
+
+  function hideLoading() {
+    document.getElementById('loading-overlay')?.remove();
+  }
+
+  function updateLoadingSub(text) {
+    const el = document.getElementById('loading-sub');
+    if (el) el.textContent = text;
+  }
+
   async function doScrape() {
     const btn = $('#btn-scrape');
     btn.classList.add('loading');
     btn.innerHTML = '<i data-lucide="loader-2" class="icon spin"></i> Scraping...';
+    showLoading('Scraping apartments...', 'Fetching data from all properties');
     try {
       const r = await api('scrape', { method: 'POST' });
       const parts = [`${r.UnitsFound} units`];
       if (r.UnitsNew) parts.push(`${r.UnitsNew} new`);
       if (r.UnitsChanged) parts.push(`${r.UnitsChanged} changed`);
+      hideLoading();
       toast(`Scrape complete: ${parts.join(', ')}`);
       route();
     } catch (e) {
+      hideLoading();
       toast('Scrape failed: ' + e.message);
     } finally {
       btn.classList.remove('loading');
