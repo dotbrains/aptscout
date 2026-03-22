@@ -139,12 +139,14 @@ aptscout serve --port 9000 --open
 All assets are embedded in the binary — no external dependencies. The UI uses the same desert theme as the marketing site.
 
 Features:
-- **Property filter** — toggle between All, Desert Club, or Hideaway
-- **Filter sidebar** — bedrooms, bathrooms, price range, floor plan, renovated/premium
+- **Property picker** — home page shows each property with live stats; click to browse its units
+- **Filter sidebar** — bedrooms, bathrooms, price range, date range, floor plan, renovated/premium
+- **Date range filter** — select a from/to date to find units available in that window; contextual empty state when no matches
 - **Apartment cards** — unit number, plan, specs, price, availability, property badge
 - **Unit detail** — full metadata, price history SVG chart, direct link to property site
+- **⌘K command palette** — quick-nav to any property, page, or action; fuzzy search, arrow keys, Enter
 - **Re-scrape from UI** — trigger a scrape without leaving the browser
-- **Keyboard shortcuts** — `/` to focus filters, `r` to scrape, `Escape` to clear
+- **Keyboard shortcuts** — `⌘K` command palette, `/` to focus filters, `r` to scrape, `Escape` to clear
 
 ## Adding a New Property
 

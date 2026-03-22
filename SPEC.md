@@ -192,32 +192,46 @@ Start a local web UI to browse apartments.
 All HTML/CSS/JS is embedded in the Go binary via `//go:embed` — no external dependencies, no Node.js, no build step.
 
 **API endpoints** (served under `/api/`):
-- `GET /api/apartments` — List all currently available apartments. Supports query params: `beds`, `baths`, `min_price`, `max_price`, `plan`, `renovated`, `available_by`, `sort`, `order`.
-- `GET /api/apartments/{unit_number}` — Full details for a specific unit including price history.
-- `GET /api/floor-plans` — List all floor plans with metadata and current availability counts.
-- `GET /api/stats` — Summary statistics.
-- `GET /api/scrape-runs` — List past scrape runs with diffs.
-- `POST /api/scrape` — Trigger a scrape from the UI. Returns the scrape summary as JSON.
+- `GET /api/apartments` — List available apartments. Query params: `property`, `beds`, `baths`, `min_price`, `max_price`, `plan`, `renovated`, `available_by`, `sort`, `order`.
+- `GET /api/apartments/{property}/{unit}` — Full details for a specific unit including price history.
+- `GET /api/floor-plans` — List floor plans. Query param: `property`.
+- `GET /api/stats` — Summary statistics. Query param: `property`.
+- `GET /api/scrape-runs` — List past scrape runs.
+- `POST /api/scrape` — Trigger a scrape of all properties from the UI.
 
 **Frontend** is a vanilla JS SPA with hash-based routing:
-- `#/` — Dashboard: apartment card grid with filter sidebar.
-- `#/unit/{number}` — Unit detail: price history chart, amenities, floor plan info.
+- `#/` — Property picker: shows each property with live unit/plan counts.
+- `#/property/{id}` — Dashboard: apartment card grid with filter sidebar for the selected property.
+- `#/unit/{property}/{unit}` — Unit detail: price history chart, amenities, floor plan info.
 - `#/floor-plans` — Floor plan overview with availability counts per plan.
 
+**Property picker (home page):**
+- Card for each registered property showing name, location, available units, floor plan count.
+- Click a card to navigate to that property's apartment dashboard.
+- Total stats across all properties shown at the bottom.
+
 **Dashboard features:**
-- **Filter sidebar** — Persistent filter panel with: bedroom count (1/2/3 toggle buttons), bathroom count, price range slider, floor plan multi-select, renovated/premium toggle, available-by date picker.
-- **Apartment cards** — Each card shows: unit number, floor plan code, bed/bath, sqft, price, availability date, floor level, amenities badges. Color-coded border by bedroom count.
+- **Filter sidebar** — Persistent filter panel with: bedroom count (1/2/3 toggle buttons), bathroom count, price range inputs, date range picker (from/to), floor plan multi-select, renovated/premium toggle.
+- **Date range filter** — Two date inputs to find units available in a specific window. Units marked "Available Now" always show. Contextual empty state with `calendar-x` icon and helpful message when no units match.
+- **Apartment cards** — Each card shows: unit number, floor plan code, property badge, bed/bath, sqft, price, availability date, floor level, amenities. Lucide icons throughout.
 - **Sort controls** — Sort by price (low→high, high→low), availability date, sqft, unit number.
-- **Scrape button** — Trigger a re-scrape from the UI without leaving the page. Shows a spinner, then refreshes the apartment list with a toast indicating what changed.
-- **Last scraped** — Relative timestamp in the header showing when data was last updated.
+- **Scrape button** — Trigger a re-scrape from the UI. Shows spinner, then refreshes with a toast.
+- **Last scraped** — Relative timestamp in the header.
+- **Back link** — "← All Properties" returns to the property picker.
 
 **Unit detail features:**
 - Price history timeline (simple SVG line chart, no external charting library).
-- All metadata: floor plan, beds, baths, sqft, deposit, floor, amenities.
+- All metadata: property, floor plan, beds, baths, sqft, deposit, floor, amenities.
 - First seen / last seen timestamps.
-- Direct link to the floor plan page on Weidner's site.
+- Direct link to the floor plan page on the property's site.
+
+**⌘K command palette:**
+- Opens with `⌘K` / `Ctrl+K` or the ⌘K button in the navbar.
+- Commands: navigate to properties, browse specific properties, view floor plans, re-scrape, clear filters.
+- Fuzzy search, arrow key navigation, Enter to execute, Escape to close.
 
 **Keyboard shortcuts:**
+- `⌘K` / `Ctrl+K` — Open command palette.
 - `/` — Focus the search/filter.
 - `r` — Trigger re-scrape.
 - `Escape` — Clear filters.
@@ -262,14 +276,16 @@ SQLite database stored at `~/.local/share/aptscout/aptscout.db`. Created automat
 
 ```sql
 CREATE TABLE floor_plans (
-    code        TEXT PRIMARY KEY,      -- e.g. "B2R"
-    bedrooms    INTEGER NOT NULL,      -- 1, 2, or 3
-    bathrooms   INTEGER NOT NULL,      -- 1 or 2
-    sqft        INTEGER NOT NULL,      -- max sqft for the plan
-    deposit     INTEGER,               -- security deposit in dollars
-    is_renovated BOOLEAN NOT NULL,     -- true for R suffix, false for P
-    features    TEXT,                   -- JSON array of amenity strings
-    updated_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    property     TEXT NOT NULL,
+    code         TEXT NOT NULL,
+    bedrooms     INTEGER NOT NULL,
+    bathrooms    INTEGER NOT NULL,
+    sqft         INTEGER NOT NULL,
+    deposit      INTEGER,
+    is_renovated BOOLEAN NOT NULL,
+    features     TEXT,
+    updated_at   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (property, code)
 );
 ```
 
@@ -277,16 +293,18 @@ CREATE TABLE floor_plans (
 
 ```sql
 CREATE TABLE apartments (
-    unit_number    TEXT PRIMARY KEY,       -- e.g. "2146"
-    floor_plan     TEXT NOT NULL REFERENCES floor_plans(code),
-    price          INTEGER,                -- monthly rent in dollars
-    available_date TEXT,                   -- ISO date string, NULL = available now
-    available_now  BOOLEAN NOT NULL DEFAULT false,
-    floor          INTEGER,               -- floor number (parsed from amenities)
-    amenities      TEXT,                   -- JSON array of amenity strings
-    is_available   BOOLEAN NOT NULL DEFAULT true,
+    property       TEXT NOT NULL,
+    unit_number    TEXT NOT NULL,
+    floor_plan     TEXT NOT NULL,
+    price          INTEGER,
+    available_date TEXT,
+    available_now  BOOLEAN NOT NULL DEFAULT 0,
+    floor          INTEGER,
+    amenities      TEXT,
+    is_available   BOOLEAN NOT NULL DEFAULT 1,
     first_seen     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    last_seen      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    last_seen      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (property, unit_number)
 );
 ```
 
@@ -295,12 +313,13 @@ CREATE TABLE apartments (
 ```sql
 CREATE TABLE price_history (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    unit_number TEXT NOT NULL REFERENCES apartments(unit_number),
+    property    TEXT NOT NULL,
+    unit_number TEXT NOT NULL,
     price       INTEGER NOT NULL,
     scraped_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX idx_price_history_unit ON price_history(unit_number);
+CREATE INDEX idx_price_history_prop_unit ON price_history(property, unit_number);
 CREATE INDEX idx_price_history_date ON price_history(scraped_at);
 ```
 
