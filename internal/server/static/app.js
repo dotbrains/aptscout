@@ -4,7 +4,7 @@
 
   const $ = (sel) => document.querySelector(sel);
   const app = $('#app');
-  let filters = { property: null, beds: null, baths: null, min_price: null, max_price: null, plan: null, renovated: null, sort: 'price', order: 'asc' };
+  let filters = { property: null, beds: null, baths: null, min_price: null, max_price: null, plan: null, renovated: null, available_from: null, available_to: null, sort: 'price', order: 'asc' };
 
   // Router
   function route() {
@@ -132,7 +132,18 @@
     if (filters.sort) params.set('sort', filters.sort);
     if (filters.order) params.set('order', filters.order);
 
-    const apts = await api('apartments?' + params.toString());
+    let apts = await api('apartments?' + params.toString());
+
+    // Client-side date range filter
+    if (filters.available_from || filters.available_to) {
+      apts = apts.filter(a => {
+        if (a.available_now) return true; // always include "available now"
+        if (!a.available_date) return false;
+        if (filters.available_from && a.available_date < filters.available_from) return false;
+        if (filters.available_to && a.available_date > filters.available_to) return false;
+        return true;
+      });
+    }
     const fpParams = new URLSearchParams();
     if (filters.property) fpParams.set('property', filters.property);
     const plans = await api('floor-plans?' + fpParams.toString());
@@ -169,6 +180,15 @@
               </div>
             </div>
             <div class="filter-group">
+              <span class="filter-label"><i data-lucide="calendar-range" class="icon-sm"></i> Availability</span>
+              <div class="filter-range">
+                <input type="date" class="filter-input" id="avail-from" value="${filters.available_from || ''}" placeholder="From">
+                <span style="color:var(--muted)">to</span>
+                <input type="date" class="filter-input" id="avail-to" value="${filters.available_to || ''}" placeholder="To">
+              </div>
+              ${filters.available_from || filters.available_to ? '<div style="margin-top:4px;font-size:11px;color:var(--accent2)"><i data-lucide="info" class="icon-sm"></i> Showing units available in this date range</div>' : ''}
+            </div>
+            <div class="filter-group">
               <span class="filter-label"><i data-lucide="sparkles" class="icon-sm"></i> Type</span>
               <div class="filter-toggles">
                 <button class="filter-toggle${filters.renovated === null ? ' active' : ''}" data-type="all">All</button>
@@ -192,9 +212,13 @@
           </div>
           ${apts.length === 0 ? `
             <div class="empty">
-              <div class="empty-icon"><i data-lucide="building-2" class="icon-xl"></i></div>
-              <div class="empty-text">No apartments found</div>
-              <div class="empty-hint">Try adjusting your filters or run a scrape first.</div>
+              <div class="empty-icon"><i data-lucide="${filters.available_from || filters.available_to ? 'calendar-x' : 'building-2'}" class="icon-xl"></i></div>
+              <div class="empty-text">${filters.available_from || filters.available_to
+                ? 'No apartments available in this date range'
+                : 'No apartments found'}</div>
+              <div class="empty-hint">${filters.available_from || filters.available_to
+                ? `No units were found available between ${filters.available_from || 'any date'} and ${filters.available_to || 'any date'}. Try widening the range or clearing the date filter.`
+                : 'Try adjusting your filters or run a scrape first.'}</div>
             </div>
           ` : `
             <div class="card-grid">
@@ -225,6 +249,17 @@
       renderDashboard();
     });
 
+    // Date range filter
+    const fromEl = $('#avail-from'), toEl = $('#avail-to');
+    if (fromEl) fromEl.onchange = () => {
+      filters.available_from = fromEl.value || null;
+      renderDashboard();
+    };
+    if (toEl) toEl.onchange = () => {
+      filters.available_to = toEl.value || null;
+      renderDashboard();
+    };
+
     const minEl = $('#min-price'), maxEl = $('#max-price');
     let priceTimeout;
     const onPriceChange = () => {
@@ -248,11 +283,11 @@
 
     const clearBtn = $('#btn-clear');
     if (clearBtn) clearBtn.onclick = () => {
-      filters = { property: null, beds: null, baths: null, min_price: null, max_price: null, plan: null, renovated: null, sort: 'price', order: 'asc' };
+      filters = { property: filters.property, beds: null, baths: null, min_price: null, max_price: null, plan: null, renovated: null, available_from: null, available_to: null, sort: 'price', order: 'asc' };
       renderDashboard();
     };
 
-    document.querySelectorAll('.card').forEach(c => c.onclick = () => {
+    document.querySelectorAll('.card').forEach
       location.hash = '#/unit/' + c.dataset.property + '/' + c.dataset.unit;
     });
 
@@ -421,7 +456,7 @@
       cmds.unshift({ icon: '←', title: 'Back to apartments', action: () => { history.back(); } });
     }
     cmds.push({ icon: '✕', title: 'Clear all filters', action: () => {
-      filters = { property: null, beds: null, baths: null, min_price: null, max_price: null, plan: null, renovated: null, sort: 'price', order: 'asc' };
+      filters = { property: null, beds: null, baths: null, min_price: null, max_price: null, plan: null, renovated: null, available_from: null, available_to: null, sort: 'price', order: 'asc' };
       route();
     }});
 
@@ -510,7 +545,7 @@
     if (e.key === 'r') doScrape();
     if (e.key === '/') { e.preventDefault(); const el = $('#min-price'); if (el) el.focus(); }
     if (e.key === 'Escape') {
-      filters = { property: null, beds: null, baths: null, min_price: null, max_price: null, plan: null, renovated: null, sort: 'price', order: 'asc' };
+      filters = { property: null, beds: null, baths: null, min_price: null, max_price: null, plan: null, renovated: null, available_from: null, available_to: null, sort: 'price', order: 'asc' };
       if (location.hash === '#/' || location.hash === '' || location.hash === '#') renderDashboard();
     }
   });

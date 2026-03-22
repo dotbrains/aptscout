@@ -60,7 +60,8 @@ a:hover { text-decoration: underline; }
 .filter-toggle.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 .filter-input { width: 100%; padding: 6px 10px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-size: 13px; }
 .filter-range { display: flex; gap: 8px; align-items: center; }
-.filter-range input { width: 80px; }
+.filter-range input[type="number"] { width: 80px; }
+.filter-range input[type="date"] { width: 130px; color-scheme: dark; }
 
 /* Apartment cards */
 .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
