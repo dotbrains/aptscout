@@ -5,6 +5,7 @@ import (
 	"embed"
 	"encoding/json"
 	"io/fs"
+	"net"
 	"net/http"
 	"strconv"
 	"strings"
@@ -31,9 +32,14 @@ func New(database *db.DB) *Server {
 	return s
 }
 
-// ListenAndServe starts the HTTP server.
+// ListenAndServe starts the HTTP server on the given address.
 func (s *Server) ListenAndServe(addr string) error {
 	return http.ListenAndServe(addr, s.mux)
+}
+
+// Serve starts the HTTP server on an existing listener.
+func (s *Server) Serve(ln net.Listener) error {
+	return http.Serve(ln, s.mux)
 }
 
 func (s *Server) routes() {

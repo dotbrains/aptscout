@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/cookiejar"
+	"net/url"
 	"time"
 
 	"github.com/dotbrains/aptscout/internal/db"
@@ -32,8 +34,12 @@ type Scraper struct {
 
 // New creates a new Scraper.
 func New(database *db.DB, writer io.Writer) *Scraper {
+	jar, _ := cookiejar.New(nil)
 	return &Scraper{
-		client: &http.Client{Timeout: 30 * time.Second},
+		client: &http.Client{
+			Timeout: 30 * time.Second,
+			Jar:     jar,
+		},
 		db:     database,
 		writer: writer,
 	}
@@ -118,26 +124,48 @@ func (s *Scraper) persist(property string, data *models.ScrapeData, result *Resu
 	return nil
 }
 
-func (s *Scraper) fetch(ctx context.Context, url string) (string, error) {
+func (s *Scraper) fetch(ctx context.Context, rawURL string) (string, error) {
+	referer := originOf(rawURL)
 	var lastErr error
+	var consecutive403 int
+
 	for attempt := 0; attempt <= maxRetries; attempt++ {
 		if attempt > 0 {
 			delay := time.Duration(1<<uint(attempt-1)) * time.Second
+			if consecutive403 > 0 {
+				// Longer backoff for 403: server is actively blocking, not just rate-limiting.
+				delay = time.Duration(2<<uint(attempt)) * time.Second
+			}
 			time.Sleep(delay)
 		}
 
-		req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+		// After 2 consecutive 403s, stop — the site is blocking us, more retries won't help.
+		if consecutive403 >= 2 {
+			break
+		}
+
+		req, err := http.NewRequestWithContext(ctx, "GET", rawURL, nil)
 		if err != nil {
 			return "", err
 		}
 		req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
-		req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+		req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8")
 		req.Header.Set("Accept-Language", "en-US,en;q=0.9")
 		req.Header.Set("Cache-Control", "no-cache")
+		req.Header.Set("Connection", "keep-alive")
+		req.Header.Set("Sec-Fetch-Dest", "document")
+		req.Header.Set("Sec-Fetch-Mode", "navigate")
+		req.Header.Set("Sec-Fetch-Site", "same-origin")
+		req.Header.Set("Sec-Fetch-User", "?1")
+		req.Header.Set("Upgrade-Insecure-Requests", "1")
+		if referer != "" {
+			req.Header.Set("Referer", referer)
+		}
 
 		resp, err := s.client.Do(req)
 		if err != nil {
 			lastErr = err
+			consecutive403 = 0
 			continue
 		}
 
@@ -145,18 +173,33 @@ func (s *Scraper) fetch(ctx context.Context, url string) (string, error) {
 		_ = resp.Body.Close()
 		if err != nil {
 			lastErr = err
+			consecutive403 = 0
 			continue
 		}
 
-		if resp.StatusCode == 429 || resp.StatusCode == 403 {
-			lastErr = fmt.Errorf("HTTP %d for %s", resp.StatusCode, url)
+		switch resp.StatusCode {
+		case 200:
+			return string(body), nil
+		case 429:
+			lastErr = fmt.Errorf("HTTP 429 (rate limited) for %s", rawURL)
+			consecutive403 = 0
 			continue
+		case 403:
+			lastErr = fmt.Errorf("HTTP 403 (forbidden) for %s", rawURL)
+			consecutive403++
+			continue
+		default:
+			return "", fmt.Errorf("HTTP %d for %s", resp.StatusCode, rawURL)
 		}
-		if resp.StatusCode != 200 {
-			return "", fmt.Errorf("HTTP %d for %s", resp.StatusCode, url)
-		}
-
-		return string(body), nil
 	}
-	return "", fmt.Errorf("fetch %s failed after %d retries: %w", url, maxRetries, lastErr)
+	return "", fmt.Errorf("fetch %s failed after %d retries: %w", rawURL, maxRetries, lastErr)
+}
+
+// originOf returns the scheme+host of a URL for use as a Referer header.
+func originOf(rawURL string) string {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return ""
+	}
+	return u.Scheme + "://" + u.Host
 }

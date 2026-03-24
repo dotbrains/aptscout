@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"net"
 	"os/exec"
 	"runtime"
 
@@ -30,8 +31,17 @@ func newServeCmd(version string) *cobra.Command {
 			}
 			defer func() { _ = database.Close() }()
 
-			addr := fmt.Sprintf(":%d", port)
-			url := fmt.Sprintf("http://localhost:%d", port)
+			// Try the requested port; fall back to an OS-assigned free port.
+			ln, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
+			if err != nil {
+				_, _ = fmt.Fprintf(cmd.OutOrStdout(), "→ Port %d in use, finding a free port...\n", port)
+				ln, err = net.Listen("tcp", ":0")
+				if err != nil {
+					return fmt.Errorf("finding free port: %w", err)
+				}
+			}
+			actualPort := ln.Addr().(*net.TCPAddr).Port
+			url := fmt.Sprintf("http://localhost:%d", actualPort)
 
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "→ Serving at %s\n", url)
 			_, _ = fmt.Fprintf(cmd.OutOrStdout(), "→ Database: %s\n", dbPath)
@@ -42,7 +52,7 @@ func newServeCmd(version string) *cobra.Command {
 			}
 
 			srv := server.New(database)
-			return srv.ListenAndServe(addr)
+			return srv.Serve(ln)
 		},
 	}
 

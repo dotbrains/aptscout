@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/spf13/cobra"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/dotbrains/aptscout/internal/models"
 	"github.com/dotbrains/aptscout/internal/provider"
 	"github.com/dotbrains/aptscout/internal/scraper"
+	"github.com/dotbrains/aptscout/internal/spinner"
 )
 
 func newScrapeCmd(version string) *cobra.Command {
@@ -48,29 +48,11 @@ func runScrape(cmd *cobra.Command, version string) error {
 	for i, prov := range providers {
 		_, _ = fmt.Fprintf(w, "\n[%d/%d] %s\n", i+1, len(providers), prov.Name())
 
-		// Start spinner
-		ctx, cancel := context.WithCancel(context.Background())
-		done := make(chan struct{})
-		go func() {
-			frames := []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
-			i := 0
-			for {
-				select {
-				case <-ctx.Done():
-					close(done)
-					return
-				default:
-					_, _ = fmt.Fprintf(w, "\r  %s Fetching floor plans and units...", frames[i%len(frames)])
-					i++
-					time.Sleep(80 * time.Millisecond)
-				}
-			}
-		}()
+		sp := spinner.New(w, "  Fetching floor plans and units...")
+		sp.Start()
 
 		result, err := s.RunProvider(context.Background(), prov)
-		cancel()
-		<-done
-		_, _ = fmt.Fprintf(w, "\r%s\r", "                                              ") // clear spinner line
+		sp.Stop()
 
 		if err != nil {
 			_, _ = fmt.Fprintf(w, "  ✗ %s: %v\n", prov.Name(), err)

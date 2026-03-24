@@ -136,6 +136,8 @@ aptscout serve
 aptscout serve --port 9000 --open
 ```
 
+If the default port (8700) is already in use, aptscout automatically picks a free port.
+
 All assets are embedded in the binary — no external dependencies. The UI uses the same desert theme as the marketing site.
 
 Features:

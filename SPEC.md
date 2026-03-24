@@ -93,11 +93,11 @@ Scrape all floor plans and update the database.
 $ aptscout scrape
 
 [1/2] Desert Club Apartments
-  ⠋ Fetching floor plans and units...
+  Fetching floor plans and units... ⠋ (3s)
   ✓ 14 plans, 24 units (24 new)
 
 [2/2] Hideaway North Scottsdale
-  ⠋ Fetching floor plans and units...
+  Fetching floor plans and units... ⠹ (5s)
   ✓ 17 plans, 10 units (10 new)
 
 ✓ Scrape complete.
@@ -105,7 +105,7 @@ $ aptscout scrape
 → Database: ~/.local/share/aptscout/aptscout.db
 ```
 
-A braille-dot spinner animates while each provider is being scraped. Per-provider results show plan/unit counts inline.
+A braille-dot spinner with elapsed time animates while each provider is being scraped. Per-provider results show plan/unit counts inline.
 
 ### `aptscout list`
 
@@ -193,7 +193,7 @@ Total Scrapes:  15
 
 Start a local web UI to browse apartments.
 
-- `--port <n>` — Port to serve on (default: `8700`).
+- `--port <n>` — Port to serve on (default: `8700`). If the port is in use, automatically falls back to an OS-assigned free port.
 - `--open` — Automatically open the browser.
 
 All HTML/CSS/JS is embedded in the Go binary via `//go:embed` — no external dependencies, no Node.js, no build step.
@@ -252,6 +252,13 @@ $ aptscout serve
 $ aptscout serve --port 9000 --open
 → Serving at http://localhost:9000
 → Opening browser...
+
+# If port 8700 is already in use:
+$ aptscout serve
+→ Port 8700 in use, finding a free port...
+→ Serving at http://localhost:52413
+→ Database: ~/.local/share/aptscout/aptscout.db
+→ Press Ctrl+C to stop
 ```
 
 ### `aptscout clean`
@@ -384,10 +391,12 @@ This makes the tool resilient to Desert Club adding or removing floor plans.
 
 ### Rate Limiting
 
-- Maximum 4 concurrent HTTP requests.
-- 500ms minimum delay between requests to the same host.
-- Respectful `User-Agent` header: `aptscout/VERSION (+https://github.com/dotbrains/aptscout)`.
-- Retry on 429 (Too Many Requests) with exponential backoff (1s, 2s, 4s, max 3 retries).
+- Maximum 2 concurrent HTTP requests per provider.
+- 1s minimum delay between requests to the same host.
+- Browser-realistic `User-Agent` and `Sec-Fetch-*` headers to avoid bot detection.
+- HTTP cookie jar persists cookies across requests (required by some anti-bot systems).
+- Retry on 429 (rate limited) with exponential backoff (1s, 2s, 4s, max 3 retries).
+- Retry on 403 (forbidden) with longer backoff; bail after 2 consecutive 403s since the site is actively blocking.
 
 ### Update Logic
 
@@ -468,6 +477,9 @@ aptscout/
 │   │   ├── scraper_test.go          # Scraper tests (mock HTTP)
 │   │   ├── parser.go                # HTML → structs (floor plans, apartments)
 │   │   └── parser_test.go           # Parser tests (fixture HTML files)
+│   ├── spinner/                     # Terminal spinner with elapsed time
+│   │   ├── spinner.go               # Animated braille spinner with duration display
+│   │   └── spinner_test.go          # Spinner tests
 │   ├── db/                          # Database layer
 │   │   ├── db.go                    # Open/migrate, transaction helpers
 │   │   ├── db_test.go               # Schema + migration tests

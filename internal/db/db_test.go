@@ -1,6 +1,8 @@
 package db
 
 import (
+	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/dotbrains/aptscout/internal/models"
@@ -39,6 +41,33 @@ func seedApartment(t *testing.T, db *DB, property, unit, plan string, price int)
 	if !isNew {
 		t.Fatalf("expected new unit %s", unit)
 	}
+}
+
+// --- Open/DefaultPath ---
+
+func TestDefaultPath(t *testing.T) {
+	p := DefaultPath()
+	if !strings.Contains(p, "aptscout.db") {
+		t.Errorf("expected path containing aptscout.db, got %s", p)
+	}
+}
+
+func TestOpen(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "test.db")
+	db, err := Open(dbPath)
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	_ = db.Close()
+}
+
+func TestOpen_CreatesDirectory(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "sub", "dir", "test.db")
+	db, err := Open(dbPath)
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	_ = db.Close()
 }
 
 // --- Floor Plans ---
