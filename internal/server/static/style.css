@@ -98,9 +98,9 @@ a:hover { text-decoration: underline; }
 .chart-line { fill: none; stroke: var(--accent); stroke-width: 2; }
 .chart-dot { fill: var(--accent); transition: r 0.15s; }
 .chart-hit { cursor: pointer; }
-.chart-hit:hover + .chart-dot { r: 7; }
+.chart-point:hover .chart-dot { r: 7; }
 .chart-tooltip { pointer-events: none; opacity: 0; transition: opacity 0.15s; }
-.chart-hit:hover ~ .chart-tooltip { opacity: 1; }
+.chart-point:hover .chart-tooltip { opacity: 1; }
 .chart-tooltip-bg { fill: var(--bg-card); stroke: var(--border); stroke-width: 1; }
 .chart-tooltip-price { fill: var(--price); font-size: 13px; font-weight: 600; }
 .chart-tooltip-date { fill: var(--muted); font-size: 10px; }

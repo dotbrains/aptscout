@@ -404,12 +404,14 @@
 
     const line = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
     const dots = points.map(p => `
-      <circle cx="${p.x}" cy="${p.y}" r="12" fill="transparent" class="chart-hit"/>
-      <circle cx="${p.x}" cy="${p.y}" r="4" class="chart-dot"/>
-      <g class="chart-tooltip" transform="translate(${p.x}, ${p.y})">
-        <rect x="-45" y="-38" width="90" height="28" rx="4" class="chart-tooltip-bg"/>
-        <text y="-20" text-anchor="middle" class="chart-tooltip-price">$${fmt(p.price)}</text>
-        <text y="20" text-anchor="middle" class="chart-tooltip-date">${p.date.toLocaleDateString()}</text>
+      <g class="chart-point">
+        <circle cx="${p.x}" cy="${p.y}" r="12" fill="transparent" class="chart-hit"/>
+        <circle cx="${p.x}" cy="${p.y}" r="4" class="chart-dot"/>
+        <g class="chart-tooltip" transform="translate(${p.x}, ${p.y})">
+          <rect x="-45" y="-38" width="90" height="28" rx="4" class="chart-tooltip-bg"/>
+          <text y="-20" text-anchor="middle" class="chart-tooltip-price">$${fmt(p.price)}</text>
+          <text y="20" text-anchor="middle" class="chart-tooltip-date">${p.date.toLocaleDateString()}</text>
+        </g>
       </g>
     `).join('');
     const labels = [points[0], points[points.length - 1]].filter(Boolean).map(p =>
