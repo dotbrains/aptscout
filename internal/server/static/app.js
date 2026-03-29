@@ -361,7 +361,7 @@
 
     app.innerHTML = `
       <div class="unit-detail">
-        <a href="#/" class="back-link"><i data-lucide="arrow-left" class="icon-sm"></i> Back to apartments</a>
+        <a href="#/property/${a.property}" class="back-link"><i data-lucide="arrow-left" class="icon-sm"></i> Back to ${info.name} apartments</a>
         <div class="unit-header">
           <div class="unit-title">#${a.unit_number} — ${a.floor_plan}</div>
           <div class="unit-subtitle">${a.bedrooms} bed · ${a.bathrooms} bath · ${fmt(a.sqft)} sq ft · ${a.is_renovated ? 'Renovated' : 'Premium'}</div>
