@@ -390,7 +390,7 @@
   }
 
   function priceChart(records) {
-    const W = 800, H = 180, PAD = 40;
+    const W = 800, H = 180, PAD = 60;
     const prices = records.map(r => r.price);
     const minP = Math.min(...prices) - 20;
     const maxP = Math.max(...prices) + 20;
