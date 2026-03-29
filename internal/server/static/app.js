@@ -407,10 +407,10 @@
       <g class="chart-point">
         <circle cx="${p.x}" cy="${p.y}" r="12" fill="transparent" class="chart-hit"/>
         <circle cx="${p.x}" cy="${p.y}" r="4" class="chart-dot"/>
-        <g class="chart-tooltip" transform="translate(${p.x}, ${p.y})">
-          <rect x="-45" y="-38" width="90" height="28" rx="4" class="chart-tooltip-bg"/>
-          <text y="-20" text-anchor="middle" class="chart-tooltip-price">$${fmt(p.price)}</text>
-          <text y="20" text-anchor="middle" class="chart-tooltip-date">${p.date.toLocaleDateString()}</text>
+        <g class="chart-tooltip" transform="translate(${p.x}, ${p.y - 50})">
+          <rect x="-50" y="-16" width="100" height="32" rx="5" class="chart-tooltip-bg"/>
+          <text y="5" text-anchor="middle" class="chart-tooltip-price">$${fmt(p.price)}</text>
+          <text y="30" text-anchor="middle" class="chart-tooltip-date">${p.date.toLocaleDateString()}</text>
         </g>
       </g>
     `).join('');
